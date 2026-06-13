@@ -14,6 +14,7 @@ public class TransazioneEntity {
     private String sottocategoria;
     private BigDecimal importo;
     private LocalDate data;
+    private int utenteId;
 
     // Costruttore vuoto richiesto da Jackson per la deserializzazione JSON
     public TransazioneEntity() {
@@ -26,6 +27,7 @@ public class TransazioneEntity {
         this.sottocategoria = sottocategoria;
         this.importo = importo;
         this.data = data;
+        this.utenteId = utenteId;
     }
 
     // Getter
@@ -35,6 +37,7 @@ public class TransazioneEntity {
     public String getSottocategoria() { return sottocategoria; }
     public BigDecimal getImporto() { return importo; }
     public LocalDate getData() { return data; }
+    public int getUtenteId() { return utenteId; }
 
     // Setter (richiesti da Jackson)
     public void setId(int id) { this.id = id; }
@@ -43,6 +46,7 @@ public class TransazioneEntity {
     public void setSottocategoria(String sottocategoria) { this.sottocategoria = sottocategoria; }
     public void setImporto(BigDecimal importo) { this.importo = importo; }
     public void setData(LocalDate data) { this.data = data; }
+    public void setUtenteId(int utenteId) { this.utenteId = utenteId; }
 
     @Override
     public String toString() {

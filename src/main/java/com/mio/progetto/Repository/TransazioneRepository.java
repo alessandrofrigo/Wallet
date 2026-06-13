@@ -33,31 +33,33 @@ public class TransazioneRepository {
         t.setSottocategoria(rs.getString("sottocategoria"));
         t.setImporto(rs.getBigDecimal("importo"));
         t.setData(rs.getDate("data").toLocalDate());
+        t.setUtenteId(rs.getInt("utente_id"));
         return t;
     };
 
-    public List<TransazioneEntity> findAll() {
-        String sql = "SELECT * FROM transazioni";
-        List<TransazioneEntity> risultati = jdbcTemplate.query(sql, rowMapper);
-        log.info("Recuperate {} transazioni dal database", risultati.size());
+    public List<TransazioneEntity> findAll(int utenteId) {
+        String sql = "SELECT * FROM transazioni WHERE utente_id = ?";
+        List<TransazioneEntity> risultati = jdbcTemplate.query(sql, rowMapper, utenteId);
+        log.info("Recuperate {} transazioni dal database per l'utente {}", risultati.size(), utenteId);
         return risultati;
     }
 
     public int insert(TransazioneEntity t) {
-        String sql = "INSERT INTO transazioni (descrizione, importo, categoria, sottocategoria, data) VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO transazioni (descrizione, importo, categoria, sottocategoria, data, utente_id) VALUES (?, ?, ?, ?, ?, ?)";
         int rows = jdbcTemplate.update(sql,
                 t.getDescrizione(),
                 t.getImporto(),
                 t.getCategoria().name(),
                 t.getSottocategoria(),
-                t.getData());
+                t.getData(),
+                t.getUtenteId());
         log.info("Transazione inserita con successo: {}", t.getDescrizione());
         return rows;
     }
 
-    public int deleteById(int id) {
-        String sql = "DELETE FROM transazioni WHERE id = ?";
-        int rows = jdbcTemplate.update(sql, id);
+    public int deleteById(int id, int utenteId) {
+        String sql = "DELETE FROM transazioni WHERE id = ? AND utente_id = ?";
+        int rows = jdbcTemplate.update(sql, id, utenteId);
         if (rows > 0) {
             log.info("Transazione con ID {} eliminata", id);
         } else {
@@ -66,16 +68,16 @@ public class TransazioneRepository {
         return rows;
     }
 
-    public int deleteByCategoria(String categoria) {
-        String sql = "DELETE FROM transazioni WHERE categoria = ?";
-        int rows = jdbcTemplate.update(sql, categoria);
+    public int deleteByCategoria(String categoria, int utenteId) {
+        String sql = "DELETE FROM transazioni WHERE categoria = ? AND utente_id = ?";
+        int rows = jdbcTemplate.update(sql, categoria, utenteId);
         log.info("{} transazioni eliminate nella categoria: {}", rows, categoria);
         return rows;
     }
 
-    public int deleteBeforeDate(String data) {
-        String sql = "DELETE FROM transazioni WHERE data < ?";
-        int rows = jdbcTemplate.update(sql, data);
+    public int deleteBeforeDate(String data, int utenteId) {
+        String sql = "DELETE FROM transazioni WHERE data < ? AND utente_id = ?";
+        int rows = jdbcTemplate.update(sql, data, utenteId);
         log.info("{} transazioni eliminate prima del {}", rows, data);
         return rows;
     }

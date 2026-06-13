@@ -19,23 +19,23 @@ public class TransazioneService {
         this.transazioneRepository = transazioneRepository;
     }
 
-    public List<TransazioneEntity> getAllTransazioni() {
-        return transazioneRepository.findAll();
+    public List<TransazioneEntity> getAllTransazioni(int utenteId) {
+        return transazioneRepository.findAll(utenteId);
     }
 
     public void insertTransazione(TransazioneEntity transazioneEntity) {
         transazioneRepository.insert(transazioneEntity);
     }
 
-    public int deleteTransazioneById(int id) {
-        return transazioneRepository.deleteById(id);
+    public int deleteTransazioneById(int id, int utenteId) {
+        return transazioneRepository.deleteById(id, utenteId);
     }
 
-    public int deleteTransazioniByCategoria(String categoria) {
-        return transazioneRepository.deleteByCategoria(categoria);
+    public int deleteTransazioniByCategoria(String categoria, int utenteId) {
+        return transazioneRepository.deleteByCategoria(categoria, utenteId);
     }
 
-    public int deleteTransazioniBeforeDate(String data) {
-        return transazioneRepository.deleteBeforeDate(data);
+    public int deleteTransazioniBeforeDate(String data, int utenteId) {
+        return transazioneRepository.deleteBeforeDate(data, utenteId);
     }
 }
