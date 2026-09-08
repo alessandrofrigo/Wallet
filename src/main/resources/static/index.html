@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestione Spese App</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Sfondo Animato -->
+    <div class="bg-shape bg-shape-1"></div>
+    <div class="bg-shape bg-shape-2"></div>
+
+    <!-- Container Notifiche -->
+    <div id="toast-container"></div>
+
+    <!-- VISTA: Login & Registrazione -->
+    <div id="auth-view" class="glass-panel auth-container">
+        <h1 id="auth-title">Bentornato!</h1>
+        <p class="subtitle" id="auth-subtitle">Accedi per gestire le tue finanze</p>
+        
+        <form id="auth-form">
+            <div class="input-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            <div class="input-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <button type="submit" class="btn-primary" id="auth-submit-btn">Accedi</button>
+        </form>
+        
+        <div class="auth-switch">
+            <span id="auth-switch-text">Non hai un account? </span>
+            <a href="#" id="auth-switch-link">Registrati</a>
+        </div>
+    </div>
+
+    <!-- VISTA: Dashboard (Inizialmente nascosta) -->
+    <div id="dashboard-view" class="dashboard-container" style="display: none;">
+        <header class="glass-panel header">
+            <h2>Gestione Spese</h2>
+            <div class="user-actions">
+                <span id="welcome-text">Ciao, Utente</span>
+                <button id="logout-btn" class="btn-secondary">Esci</button>
+            </div>
+        </header>
+
+        <!-- Riga Dashboard: Bilancio + Grafico -->
+        <section class="dashboard-stats">
+            <div class="glass-panel stat-card">
+                <div class="stat-label">Entrate Totali</div>
+                <div class="stat-value income" id="total-income">€ 0.00</div>
+            </div>
+            <div class="glass-panel stat-card">
+                <div class="stat-label">Uscite Totali</div>
+                <div class="stat-value expense" id="total-expense">€ 0.00</div>
+            </div>
+            <div class="glass-panel stat-card">
+                <div class="stat-label">Bilancio</div>
+                <div class="stat-value" id="total-balance">€ 0.00</div>
+            </div>
+            <div class="glass-panel stat-card chart-card">
+                <div class="stat-label">Spese per Categoria</div>
+                <canvas id="expensesChart"></canvas>
+            </div>
+        </section>
+
+        <main class="dashboard-content">
+            <!-- Colonna Sinistra: Aggiungi Transazione -->
+            <section class="glass-panel form-section">
+                <h3>Nuova Transazione</h3>
+                <form id="transaction-form">
+                    <div class="input-group">
+                        <label for="tipo">Tipo</label>
+                        <select id="tipo" name="tipo" required>
+                            <option value="USCITA">🔴 Uscita (Spesa)</option>
+                            <option value="ENTRATA">🟢 Entrata</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="descrizione">Descrizione</label>
+                        <input type="text" id="descrizione" name="descrizione" required placeholder="Es. Spesa Conad">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="importo">Importo (€)</label>
+                        <input type="number" step="0.01" id="importo" name="importo" required>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="data">Data</label>
+                        <input type="date" id="data" name="data" required>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="categoria">Categoria</label>
+                        <select id="categoria" name="categoria" required>
+                            <option value="">Seleziona...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="sottocategoria">Sottocategoria</label>
+                        <select id="sottocategoria" name="sottocategoria" required disabled>
+                            <option value="">Seleziona Categoria prima</option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" class="btn-primary">Aggiungi</button>
+                </form>
+            </section>
+
+            <!-- Colonna Destra: Lista Transazioni -->
+            <section class="glass-panel list-section">
+                <div class="list-header">
+                    <h3>Ultime Transazioni</h3>
+                </div>
+                
+                <div class="table-container">
+                    <table id="transactions-table">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Tipo</th>
+                                <th>Descrizione</th>
+                                <th>Categoria</th>
+                                <th>Importo</th>
+                                <th>Azioni</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transactions-body">
+                            <!-- Popolato dinamicamente da JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
