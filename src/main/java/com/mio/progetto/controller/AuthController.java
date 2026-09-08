@@ -3,6 +3,9 @@ package com.mio.progetto.controller;
 import com.mio.progetto.model.UtenteEntity;
 import com.mio.progetto.repository.UtenteRepository;
 import com.mio.progetto.service.CustomUserDetails;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -33,12 +36,21 @@ public class AuthController {
     }
 
     public static class LoginRequest {
+        @NotBlank(message = "Username non può essere vuoto")
         public String username;
+
+        @NotBlank(message = "Password non può essere vuota")
         public String password;
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody LoginRequest loginRequest, HttpServletRequest request) {
+    public ResponseEntity<String> login(@Valid @RequestBody LoginRequest loginRequest, HttpServletRequest request) {
+        // Se lo username non esiste, blocca il login e invita alla registrazione (404),
+        // distinguendolo dal caso "password errata" (401).
+        if (utenteRepository.findByUsername(loginRequest.username).isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Utente non registrato. Effettua prima la registrazione.");
+        }
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(loginRequest.username, loginRequest.password)
@@ -69,12 +81,17 @@ public class AuthController {
     }
 
     public static class RegisterRequest {
+        @NotBlank(message = "Username non può essere vuoto")
+        @Size(min = 3, max = 50, message = "L'username deve contenere tra i 3 e i 50 caratteri")
         public String username;
+
+        @NotBlank(message = "Password non può essere vuota")
+        @Size(min = 4, max = 100, message = "La password deve contenere tra i 4 e i 100 caratteri")
         public String password;
     }
 
     @PostMapping("/register")
-    public ResponseEntity<String> register(@RequestBody RegisterRequest registerRequest) {
+    public ResponseEntity<String> register(@Valid @RequestBody RegisterRequest registerRequest) {
         if (utenteRepository.findByUsername(registerRequest.username).isPresent()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Username già in uso");
         }

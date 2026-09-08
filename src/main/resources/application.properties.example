@@ -1,0 +1,20 @@
+# =====================================================================
+# Template di configurazione.
+# Copia questo file in "application.properties" (ignorato da git) e
+# adatta i valori al tuo ambiente locale.
+#   cp application.properties.example application.properties
+# =====================================================================
+
+# Spring DataSource Configuration
+spring.datasource.url=jdbc:mysql://localhost:3306/gestione_spese
+spring.datasource.username=root
+# In alternativa esporta la variabile d'ambiente DB_PASSWORD
+spring.datasource.password=${DB_PASSWORD:changeme}
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+
+# Inizializzazione automatica del database (crea le tabelle se mancanti)
+spring.sql.init.mode=always
+spring.sql.init.continue-on-error=false
+
+# CORS Configuration - origini del frontend autorizzate
+app.cors.allowed-origins=http://localhost:3000,http://localhost:5500,http://127.0.0.1:5500

@@ -52,6 +52,13 @@ public class SottoCategoriaRegistry {
                 new Sottocategoria("Prodotti Casa", Categoria.SPESA)
         ));
 
+        mappa.put(Categoria.ENTRATE, List.of(
+                new Sottocategoria("Stipendio", Categoria.ENTRATE),
+                new Sottocategoria("Freelance", Categoria.ENTRATE),
+                new Sottocategoria("Regali Ricevuti", Categoria.ENTRATE),
+                new Sottocategoria("Rimborsi", Categoria.ENTRATE)
+        ));
+
         mappa.put(Categoria.ALTRO, List.of(
                 new Sottocategoria("Regali", Categoria.ALTRO),
                 new Sottocategoria("Varie", Categoria.ALTRO),

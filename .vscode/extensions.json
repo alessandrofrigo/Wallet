@@ -1,0 +1,11 @@
+{
+  "recommendations": [
+    "vscjava.vscode-java-pack",
+    "vmware.vscode-boot-dev-pack",
+    "sonarsource.sonarlint-vscode",
+    "humao.rest-client",
+    "ritwickdey.liveserver",
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode"
+  ]
+}

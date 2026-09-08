@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -23,6 +24,10 @@ public class TransazioneService {
         return transazioneRepository.findAll(utenteId);
     }
 
+    public List<TransazioneEntity> getAllTransazioniPaginated(int utenteId, int page, int size) {
+        return transazioneRepository.findAllPaginated(utenteId, page, size);
+    }
+
     public void insertTransazione(TransazioneEntity transazioneEntity) {
         transazioneRepository.insert(transazioneEntity);
     }
@@ -35,7 +40,7 @@ public class TransazioneService {
         return transazioneRepository.deleteByCategoria(categoria, utenteId);
     }
 
-    public int deleteTransazioniBeforeDate(String data, int utenteId) {
+    public int deleteTransazioniBeforeDate(LocalDate data, int utenteId) {
         return transazioneRepository.deleteBeforeDate(data, utenteId);
     }
 }

@@ -1,6 +1,7 @@
 package com.mio.progetto.repository;
 
 import com.mio.progetto.model.Categoria;
+import com.mio.progetto.model.TipoTransazione;
 import com.mio.progetto.model.TransazioneEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,10 +30,35 @@ public class TransazioneRepository {
         TransazioneEntity t = new TransazioneEntity();
         t.setId(rs.getInt("id"));
         t.setDescrizione(rs.getString("descrizione"));
-        t.setCategoria(Categoria.valueOf(rs.getString("categoria")));
+        
+        String catStr = rs.getString("categoria");
+        Categoria categoria = Categoria.ALTRO;
+        if (catStr != null) {
+            try {
+                categoria = Categoria.valueOf(catStr.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                log.warn("Categoria non valida trovata nel database: {}. Impostata a ALTRO.", catStr);
+            }
+        }
+        t.setCategoria(categoria);
+        
         t.setSottocategoria(rs.getString("sottocategoria"));
         t.setImporto(rs.getBigDecimal("importo"));
-        t.setData(rs.getDate("data").toLocalDate());
+
+        String tipoStr = rs.getString("tipo");
+        TipoTransazione tipo = TipoTransazione.USCITA;
+        if (tipoStr != null) {
+            try {
+                tipo = TipoTransazione.valueOf(tipoStr.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                log.warn("Tipo transazione non valido trovato nel database: {}. Impostato a USCITA.", tipoStr);
+            }
+        }
+        t.setTipo(tipo);
+        
+        java.sql.Date sqlDate = rs.getDate("data");
+        t.setData(sqlDate != null ? sqlDate.toLocalDate() : null);
+        
         t.setUtenteId(rs.getInt("utente_id"));
         return t;
     };
@@ -44,16 +70,25 @@ public class TransazioneRepository {
         return risultati;
     }
 
+    public List<TransazioneEntity> findAllPaginated(int utenteId, int page, int size) {
+        String sql = "SELECT * FROM transazioni WHERE utente_id = ? LIMIT ? OFFSET ?";
+        int offset = page * size;
+        List<TransazioneEntity> risultati = jdbcTemplate.query(sql, rowMapper, utenteId, size, offset);
+        log.info("Recuperate {} transazioni (pagina {}, dimensione {}) dal database per l'utente {}", risultati.size(), page, size, utenteId);
+        return risultati;
+    }
+
     public int insert(TransazioneEntity t) {
-        String sql = "INSERT INTO transazioni (descrizione, importo, categoria, sottocategoria, data, utente_id) VALUES (?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO transazioni (descrizione, importo, categoria, sottocategoria, tipo, data, utente_id) VALUES (?, ?, ?, ?, ?, ?, ?)";
         int rows = jdbcTemplate.update(sql,
                 t.getDescrizione(),
                 t.getImporto(),
                 t.getCategoria().name(),
                 t.getSottocategoria(),
+                t.getTipo().name(),
                 t.getData(),
                 t.getUtenteId());
-        log.info("Transazione inserita con successo: {}", t.getDescrizione());
+        log.info("Transazione ({}) inserita con successo: {}", t.getTipo(), t.getDescrizione());
         return rows;
     }
 
@@ -75,7 +110,7 @@ public class TransazioneRepository {
         return rows;
     }
 
-    public int deleteBeforeDate(String data, int utenteId) {
+    public int deleteBeforeDate(LocalDate data, int utenteId) {
         String sql = "DELETE FROM transazioni WHERE data < ? AND utente_id = ?";
         int rows = jdbcTemplate.update(sql, data, utenteId);
         log.info("{} transazioni eliminate prima del {}", rows, data);

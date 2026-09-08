@@ -8,5 +8,6 @@ public enum Categoria{
         BOLLETTE,
         SHOPPING,
         SPESA,
+        ENTRATE,
         ALTRO
     }

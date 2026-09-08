@@ -15,12 +15,22 @@ CREATE TABLE IF NOT EXISTS transazioni (
     importo DECIMAL(10,2),
     categoria VARCHAR(50),
     sottocategoria VARCHAR(50),
+    tipo VARCHAR(10) NOT NULL DEFAULT 'USCITA',
     data DATE,
     utente_id INT NOT NULL,
+    INDEX idx_transazioni_utente_id (utente_id),
     FOREIGN KEY (utente_id) REFERENCES utenti(id) ON DELETE CASCADE
 );
 
--- Inserisci utente admin di default se non esiste
--- La password è 'admin' codificata con BCrypt
-INSERT IGNORE INTO utenti (id, username, password, ruolo) 
-VALUES (1, 'admin', '$2a$10$wT.B3z9U.R.E.RkZc3/TTeu9qC/w2S5Y9e.D7V4M.Q6L4gqE7uG/S', 'ROLE_ADMIN');
+-- Migrazione idempotente: aggiunge la colonna "tipo" ai database creati con
+-- una versione precedente dello schema (senza distruggere i dati esistenti).
+SET @ddl := (SELECT IF(COUNT(*) = 0,
+        'ALTER TABLE transazioni ADD COLUMN tipo VARCHAR(10) NOT NULL DEFAULT ''USCITA''',
+        'DO 0')
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'transazioni'
+      AND COLUMN_NAME = 'tipo');
+PREPARE migrate_tipo FROM @ddl;
+EXECUTE migrate_tipo;
+DEALLOCATE PREPARE migrate_tipo;
