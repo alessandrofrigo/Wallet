@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestione Spese App</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -15,16 +15,156 @@
     <!-- Container Notifiche -->
     <div id="toast-container"></div>
 
+    <!-- VISTA: Landing -->
+    <div id="landing-view" class="landing-container">
+        <nav class="landing-nav">
+            <div class="landing-brand">
+                <div class="brand-mark">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 12h4l3 8 4-16 3 8h4"></path>
+                    </svg>
+                </div>
+                Gestione Spese
+            </div>
+            <div class="landing-nav-actions">
+                <button class="btn-secondary landing-login-trigger">Accedi</button>
+                <button class="btn-primary landing-register-trigger">Registrati</button>
+            </div>
+        </nav>
+
+        <div class="landing-content">
+            <section class="landing-hero">
+                <div class="landing-hero-text">
+                    <div class="landing-kicker"><span class="landing-kicker-dot"></span> Gratis, nessuna carta richiesta</div>
+                    <h1>Le tue spese, <span class="landing-accent-text">finalmente</span> sotto controllo.</h1>
+                    <p class="landing-hero-sub">
+                        Registra entrate e uscite, organizzale per categoria e sottocategoria, filtra e ordina
+                        come vuoi. Un'unica dashboard ti mostra bilancio e andamento delle spese in tempo reale.
+                    </p>
+                    <div class="landing-hero-ctas">
+                        <button class="btn-primary landing-lg landing-register-trigger">Crea il tuo account</button>
+                        <button class="btn-secondary landing-lg landing-login-trigger">Ho già un account</button>
+                    </div>
+                    <div class="landing-hero-note">Accesso sicuro con username o email + password.</div>
+                </div>
+
+                <div class="glass-panel landing-preview">
+                    <div class="landing-preview-head">
+                        <span class="landing-preview-title">Panoramica</span>
+                        <div class="landing-preview-dots"><span></span><span></span><span></span></div>
+                    </div>
+                    <div class="landing-stat-row">
+                        <div class="landing-stat">
+                            <div class="landing-stat-label">Entrate</div>
+                            <div class="landing-stat-value income">€ 2.450</div>
+                        </div>
+                        <div class="landing-stat">
+                            <div class="landing-stat-label">Uscite</div>
+                            <div class="landing-stat-value expense">€ 1.180</div>
+                        </div>
+                        <div class="landing-stat">
+                            <div class="landing-stat-label">Bilancio</div>
+                            <div class="landing-stat-value income">€ 1.270</div>
+                        </div>
+                    </div>
+                    <div class="landing-preview-body">
+                        <div class="landing-donut"></div>
+                        <div class="landing-tx-list">
+                            <div class="landing-tx-row">
+                                <span class="landing-tx-left"><span class="badge-uscita">USCITA</span> Spesa</span>
+                                <span class="amount-expense">− € 42,30</span>
+                            </div>
+                            <div class="landing-tx-row">
+                                <span class="landing-tx-left"><span class="badge-entrata">ENTRATA</span> Stipendio</span>
+                                <span class="amount-income">+ € 1.800,00</span>
+                            </div>
+                            <div class="landing-tx-row">
+                                <span class="landing-tx-left"><span class="badge-uscita">USCITA</span> Spesa</span>
+                                <span class="amount-expense">− € 76,00</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="landing-features-section">
+                <div class="landing-section-head">
+                    <div class="landing-eyebrow">Cosa puoi fare</div>
+                    <h2>Tutto quello che serve, niente di superfluo</h2>
+                    <p>Tre strumenti pensati per chi vuole capire dove vanno i propri soldi senza perdere tempo.</p>
+                </div>
+
+                <div class="landing-features">
+                    <div class="glass-panel landing-feature">
+                        <div class="landing-feature-icon">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="8" y1="6" x2="21" y2="6"></line>
+                                <line x1="8" y1="12" x2="21" y2="12"></line>
+                                <line x1="8" y1="18" x2="21" y2="18"></line>
+                                <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                                <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                                <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                            </svg>
+                        </div>
+                        <h3>Transazioni organizzate</h3>
+                        <p>Categorie e sottocategorie per ogni spesa, con filtri per data, categoria e testo, ordinamento e paginazione per ritrovare tutto in un attimo.</p>
+                    </div>
+                    <div class="glass-panel landing-feature">
+                        <div class="landing-feature-icon">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
+                                <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
+                            </svg>
+                        </div>
+                        <h3>Dashboard chiara</h3>
+                        <p>Bilancio, entrate e uscite aggiornati in tempo reale, con un grafico a ciambella che mostra subito dove si concentrano le spese.</p>
+                    </div>
+                    <div class="glass-panel landing-feature">
+                        <div class="landing-feature-icon">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                            </svg>
+                        </div>
+                        <h3>Accesso sicuro</h3>
+                        <p>Registrati con username o email, password protette e sessione sicura: i tuoi dati restano solo tuoi.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="glass-panel landing-cta-band">
+                <h2>Pronto a iniziare?</h2>
+                <p>Bastano username o email e una password. Nessuna carta di credito richiesta.</p>
+                <div class="landing-cta-actions">
+                    <button class="btn-primary landing-lg landing-register-trigger">Registrati gratis</button>
+                    <button class="btn-secondary landing-lg landing-login-trigger">Accedi</button>
+                </div>
+            </section>
+        </div>
+
+        <footer class="landing-footer">
+            <div class="landing-footer-brand">© 2026 Gestione Spese</div>
+        </footer>
+    </div>
+
     <!-- VISTA: Login & Registrazione -->
-    <div id="auth-view" class="glass-panel auth-container">
+    <div id="auth-view" class="glass-panel auth-container" style="display: none;">
         <h1 id="auth-title">Bentornato!</h1>
         <p class="subtitle" id="auth-subtitle">Accedi per gestire le tue finanze</p>
         
         <form id="auth-form">
-            <div class="input-group">
-                <label for="username">Username</label>
-                <input type="text" id="username" name="username" required>
+            <div class="input-group" id="grp-identificativo">
+                <label for="identificativo">Email o Username</label>
+                <input type="text" id="identificativo" name="identificativo" autocomplete="username">
             </div>
+            <div class="input-group" id="grp-username" hidden>
+                <label for="reg-username">Username <span class="optional-tag">(opzionale)</span></label>
+                <input type="text" id="reg-username" name="reg-username" autocomplete="username">
+            </div>
+            <div class="input-group" id="grp-email" hidden>
+                <label for="reg-email">Email <span class="optional-tag">(opzionale)</span></label>
+                <input type="email" id="reg-email" name="reg-email" autocomplete="email">
+            </div>
+            <p id="auth-hint" class="hint-text" hidden>Compila almeno uno tra username ed email.</p>
             <div class="input-group">
                 <label for="password">Password</label>
                 <input type="password" id="password" name="password" required>
@@ -44,6 +184,7 @@
             <h2>Gestione Spese</h2>
             <div class="user-actions">
                 <span id="welcome-text">Ciao, Utente</span>
+                <button id="profile-btn" class="btn-secondary">Profilo</button>
                 <button id="logout-btn" class="btn-secondary">Esci</button>
             </div>
         </header>
@@ -110,7 +251,8 @@
                         </select>
                     </div>
                     
-                    <button type="submit" class="btn-primary">Aggiungi</button>
+                    <button type="submit" class="btn-primary" id="transaction-submit-btn">Aggiungi</button>
+                    <button type="button" class="btn-secondary" id="cancel-edit-btn" hidden>Annulla</button>
                 </form>
             </section>
 
@@ -119,16 +261,30 @@
                 <div class="list-header">
                     <h3>Ultime Transazioni</h3>
                 </div>
-                
+
+                <div class="filters-row">
+                    <select id="filter-categoria">
+                        <option value="">Tutte le categorie</option>
+                    </select>
+                    <select id="filter-tipo">
+                        <option value="">Tutti i tipi</option>
+                        <option value="ENTRATA">Entrata</option>
+                        <option value="USCITA">Uscita</option>
+                    </select>
+                    <input type="date" id="filter-data-da" title="Da">
+                    <input type="date" id="filter-data-a" title="A">
+                    <input type="text" id="filter-testo" placeholder="Cerca descrizione...">
+                </div>
+
                 <div class="table-container">
                     <table id="transactions-table">
                         <thead>
                             <tr>
-                                <th>Data</th>
+                                <th data-sort="data">Data <span class="sort-indicator"></span></th>
                                 <th>Tipo</th>
-                                <th>Descrizione</th>
-                                <th>Categoria</th>
-                                <th>Importo</th>
+                                <th data-sort="descrizione">Descrizione <span class="sort-indicator"></span></th>
+                                <th data-sort="categoria">Categoria <span class="sort-indicator"></span></th>
+                                <th data-sort="importo">Importo <span class="sort-indicator"></span></th>
                                 <th>Azioni</th>
                             </tr>
                         </thead>
@@ -137,8 +293,64 @@
                         </tbody>
                     </table>
                 </div>
+
+                <div class="pagination-controls">
+                    <button type="button" id="prev-page-btn" class="btn-secondary">← Precedente</button>
+                    <span id="page-info">Pagina 1 di 1</span>
+                    <button type="button" id="next-page-btn" class="btn-secondary">Successiva →</button>
+                </div>
             </section>
         </main>
+    </div>
+
+    <!-- MODALE: Profilo -->
+    <div id="profile-modal-overlay" class="modal-overlay" hidden>
+        <div class="glass-panel modal-card">
+            <div class="modal-header">
+                <h2>Il tuo profilo</h2>
+                <button type="button" id="profile-modal-close" class="modal-close" aria-label="Chiudi">✕</button>
+            </div>
+
+            <form id="profile-info-form" class="modal-section">
+                <h3>Username ed email</h3>
+                <div class="input-group">
+                    <label for="profile-username">Username <span class="optional-tag">(opzionale)</span></label>
+                    <input type="text" id="profile-username" name="profile-username" autocomplete="username">
+                </div>
+                <div class="input-group">
+                    <label for="profile-email">Email <span class="optional-tag">(opzionale)</span></label>
+                    <input type="email" id="profile-email" name="profile-email" autocomplete="email">
+                </div>
+                <button type="submit" class="btn-primary">Salva modifiche</button>
+            </form>
+
+            <hr class="modal-divider">
+
+            <form id="profile-password-form" class="modal-section">
+                <h3>Cambia password</h3>
+                <div class="input-group">
+                    <label for="profile-current-password">Password attuale</label>
+                    <input type="password" id="profile-current-password" name="profile-current-password" autocomplete="current-password" required>
+                </div>
+                <div class="input-group">
+                    <label for="profile-new-password">Nuova password</label>
+                    <input type="password" id="profile-new-password" name="profile-new-password" autocomplete="new-password" required>
+                </div>
+                <button type="submit" class="btn-primary">Aggiorna password</button>
+            </form>
+
+            <hr class="modal-divider">
+
+            <form id="profile-delete-form" class="modal-section modal-section-danger">
+                <h3>Elimina account</h3>
+                <p class="hint-text">Questa azione è irreversibile: verranno eliminate anche tutte le tue transazioni.</p>
+                <div class="input-group">
+                    <label for="profile-delete-password">Conferma con la password</label>
+                    <input type="password" id="profile-delete-password" name="profile-delete-password" autocomplete="current-password" required>
+                </div>
+                <button type="submit" class="btn-danger">Elimina il mio account</button>
+            </form>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>

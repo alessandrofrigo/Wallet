@@ -13,7 +13,9 @@ import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Repository
 public class TransazioneRepository {
@@ -114,6 +116,79 @@ public class TransazioneRepository {
         String sql = "DELETE FROM transazioni WHERE data < ? AND utente_id = ?";
         int rows = jdbcTemplate.update(sql, data, utenteId);
         log.info("{} transazioni eliminate prima del {}", rows, data);
+        return rows;
+    }
+
+    private static final Map<String, String> SORT_BY_COLONNE = Map.of(
+            "data", "data",
+            "importo", "importo",
+            "categoria", "categoria",
+            "descrizione", "descrizione"
+    );
+
+    private String costruisciWhere(int utenteId, String categoria, String tipo, LocalDate dataDa, LocalDate dataA, String testo, List<Object> parametri) {
+        StringBuilder where = new StringBuilder(" WHERE utente_id = ?");
+        parametri.add(utenteId);
+
+        if (categoria != null && !categoria.isBlank()) {
+            where.append(" AND categoria = ?");
+            parametri.add(categoria);
+        }
+        if (tipo != null && !tipo.isBlank()) {
+            where.append(" AND tipo = ?");
+            parametri.add(tipo);
+        }
+        if (dataDa != null) {
+            where.append(" AND data >= ?");
+            parametri.add(dataDa);
+        }
+        if (dataA != null) {
+            where.append(" AND data <= ?");
+            parametri.add(dataA);
+        }
+        if (testo != null && !testo.isBlank()) {
+            where.append(" AND LOWER(descrizione) LIKE LOWER(?)");
+            parametri.add("%" + testo + "%");
+        }
+        return where.toString();
+    }
+
+    public long countFiltered(int utenteId, String categoria, String tipo, LocalDate dataDa, LocalDate dataA, String testo) {
+        List<Object> parametri = new ArrayList<>();
+        String where = costruisciWhere(utenteId, categoria, tipo, dataDa, dataA, testo, parametri);
+        String sql = "SELECT COUNT(*) FROM transazioni" + where;
+        Long totale = jdbcTemplate.queryForObject(sql, Long.class, parametri.toArray());
+        return totale != null ? totale : 0L;
+    }
+
+    public List<TransazioneEntity> findAllFiltered(int utenteId, String categoria, String tipo, LocalDate dataDa, LocalDate dataA, String testo, String sortBy, String sortDir, int page, int size) {
+        List<Object> parametri = new ArrayList<>();
+        String where = costruisciWhere(utenteId, categoria, tipo, dataDa, dataA, testo, parametri);
+
+        String colonnaOrdinamento = SORT_BY_COLONNE.getOrDefault(sortBy, "data");
+        String direzioneOrdinamento = "ASC".equalsIgnoreCase(sortDir) ? "ASC" : "DESC";
+
+        String sql = "SELECT * FROM transazioni" + where + " ORDER BY " + colonnaOrdinamento + " " + direzioneOrdinamento + " LIMIT ? OFFSET ?";
+        parametri.add(size);
+        parametri.add(page * size);
+
+        List<TransazioneEntity> risultati = jdbcTemplate.query(sql, rowMapper, parametri.toArray());
+        log.info("Recuperate {} transazioni filtrate (pagina {}, dimensione {}) per l'utente {}", risultati.size(), page, size, utenteId);
+        return risultati;
+    }
+
+    public int update(int id, TransazioneEntity t, int utenteId) {
+        String sql = "UPDATE transazioni SET descrizione = ?, importo = ?, categoria = ?, sottocategoria = ?, tipo = ?, data = ? WHERE id = ? AND utente_id = ?";
+        int rows = jdbcTemplate.update(sql,
+                t.getDescrizione(),
+                t.getImporto(),
+                t.getCategoria().name(),
+                t.getSottocategoria(),
+                t.getTipo().name(),
+                t.getData(),
+                id,
+                utenteId);
+        log.info("Transazione con ID {} aggiornata", id);
         return rows;
     }
 }

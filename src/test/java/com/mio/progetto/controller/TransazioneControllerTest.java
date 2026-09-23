@@ -2,6 +2,7 @@ package com.mio.progetto.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mio.progetto.model.Categoria;
+import com.mio.progetto.model.PaginaTransazioni;
 import com.mio.progetto.model.TipoTransazione;
 import com.mio.progetto.model.TransazioneEntity;
 import com.mio.progetto.model.UtenteEntity;
@@ -18,6 +19,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
@@ -37,7 +41,7 @@ public class TransazioneControllerTest {
     private ObjectMapper objectMapper;
 
     private CustomUserDetails getMockUser() {
-        UtenteEntity utente = new UtenteEntity(1, "testuser", "password", "ROLE_USER");
+        UtenteEntity utente = new UtenteEntity(1, "testuser", "testmail@example.com", "password", "ROLE_USER");
         return new CustomUserDetails(utente);
     }
 
@@ -45,25 +49,58 @@ public class TransazioneControllerTest {
     void testGetAllTransazioniSuccess() throws Exception {
         CustomUserDetails mockUser = getMockUser();
         TransazioneEntity t = new TransazioneEntity(1, "Spesa", Categoria.CIBO, "Supermercato", TipoTransazione.USCITA, new BigDecimal("15.50"), LocalDate.now(), mockUser.getId());
-        when(transazioneService.getAllTransazioniPaginated(mockUser.getId(), 0, 100)).thenReturn(List.of(t));
+        PaginaTransazioni pagina = new PaginaTransazioni(List.of(t), 0, 100, 1);
+        when(transazioneService.getTransazioniFiltrate(mockUser.getId(), null, null, null, null, null, "data", "desc", 0, 100))
+                .thenReturn(pagina);
 
         mockMvc.perform(get("/api/transazioni")
                 .with(user(mockUser)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].descrizione").value("Spesa"))
-                .andExpect(jsonPath("$[0].importo").value(15.50));
+                .andExpect(jsonPath("$.contenuto[0].descrizione").value("Spesa"))
+                .andExpect(jsonPath("$.contenuto[0].importo").value(15.50))
+                .andExpect(jsonPath("$.page").value(0))
+                .andExpect(jsonPath("$.size").value(100))
+                .andExpect(jsonPath("$.totale").value(1))
+                .andExpect(jsonPath("$.totalePagine").value(1));
     }
 
     @Test
     void testGetAllTransazioniPaginatedSuccess() throws Exception {
         CustomUserDetails mockUser = getMockUser();
         TransazioneEntity t = new TransazioneEntity(1, "Spesa", Categoria.CIBO, "Supermercato", TipoTransazione.USCITA, new BigDecimal("15.50"), LocalDate.now(), mockUser.getId());
-        when(transazioneService.getAllTransazioniPaginated(mockUser.getId(), 2, 20)).thenReturn(List.of(t));
+        PaginaTransazioni pagina = new PaginaTransazioni(List.of(t), 2, 20, 45);
+        when(transazioneService.getTransazioniFiltrate(mockUser.getId(), null, null, null, null, null, "data", "desc", 2, 20))
+                .thenReturn(pagina);
 
         mockMvc.perform(get("/api/transazioni?page=2&size=20")
                 .with(user(mockUser)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].descrizione").value("Spesa"));
+                .andExpect(jsonPath("$.contenuto[0].descrizione").value("Spesa"))
+                .andExpect(jsonPath("$.page").value(2))
+                .andExpect(jsonPath("$.totalePagine").value(3));
+    }
+
+    @Test
+    void testGetAllTransazioniConFiltriEOrdinamento() throws Exception {
+        CustomUserDetails mockUser = getMockUser();
+        TransazioneEntity t = new TransazioneEntity(1, "Pranzo", Categoria.CIBO, "Ristorante", TipoTransazione.USCITA, new BigDecimal("25.00"), LocalDate.of(2026, 1, 15), mockUser.getId());
+        PaginaTransazioni pagina = new PaginaTransazioni(List.of(t), 0, 100, 1);
+        when(transazioneService.getTransazioniFiltrate(mockUser.getId(), "CIBO", "USCITA", LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 31), "pranzo", "importo", "asc", 0, 100))
+                .thenReturn(pagina);
+
+        mockMvc.perform(get("/api/transazioni")
+                .param("categoria", "CIBO")
+                .param("tipo", "USCITA")
+                .param("dataDa", "2026-01-01")
+                .param("dataA", "2026-01-31")
+                .param("testo", "pranzo")
+                .param("sortBy", "importo")
+                .param("sortDir", "asc")
+                .with(user(mockUser)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.contenuto[0].descrizione").value("Pranzo"));
+
+        verify(transazioneService, times(1)).getTransazioniFiltrate(mockUser.getId(), "CIBO", "USCITA", LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 31), "pranzo", "importo", "asc", 0, 100);
     }
 
     @Test
@@ -114,6 +151,54 @@ public class TransazioneControllerTest {
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("non è valida per la categoria")));
 
         verify(transazioneService, never()).insertTransazione(any());
+    }
+
+    @Test
+    void testUpdateTransazioneSuccess() throws Exception {
+        CustomUserDetails mockUser = getMockUser();
+        TransazioneEntity t = new TransazioneEntity(1, "Pranzo aggiornato", Categoria.CIBO, "Ristorante", TipoTransazione.USCITA, new BigDecimal("30.00"), LocalDate.now(), mockUser.getId());
+        when(transazioneService.updateTransazione(eq(1), any(TransazioneEntity.class), eq(mockUser.getId()))).thenReturn(1);
+
+        mockMvc.perform(put("/api/transazioni/1")
+                .with(user(mockUser))
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(t)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.descrizione").value("Pranzo aggiornato"));
+
+        verify(transazioneService, times(1)).updateTransazione(eq(1), any(TransazioneEntity.class), eq(mockUser.getId()));
+    }
+
+    @Test
+    void testUpdateTransazioneNotFound() throws Exception {
+        CustomUserDetails mockUser = getMockUser();
+        TransazioneEntity t = new TransazioneEntity(99, "Pranzo", Categoria.CIBO, "Ristorante", TipoTransazione.USCITA, new BigDecimal("30.00"), LocalDate.now(), mockUser.getId());
+        when(transazioneService.updateTransazione(eq(99), any(TransazioneEntity.class), eq(mockUser.getId()))).thenReturn(0);
+
+        mockMvc.perform(put("/api/transazioni/99")
+                .with(user(mockUser))
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(t)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void testUpdateTransazioneCoherenceError_TipoCategoriaIncoerenti() throws Exception {
+        CustomUserDetails mockUser = getMockUser();
+        // Tipo ENTRATA ma categoria diversa da ENTRATE
+        TransazioneEntity t = new TransazioneEntity(1, "Stipendio", Categoria.CIBO, "Supermercato", TipoTransazione.ENTRATA, new BigDecimal("1000.00"), LocalDate.now(), mockUser.getId());
+
+        mockMvc.perform(put("/api/transazioni/1")
+                .with(user(mockUser))
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(t)))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("deve avere la categoria ENTRATE")));
+
+        verify(transazioneService, never()).updateTransazione(anyInt(), any(), anyInt());
     }
 
     @Test

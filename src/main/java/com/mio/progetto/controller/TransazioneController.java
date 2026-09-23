@@ -1,5 +1,6 @@
 package com.mio.progetto.controller;
 
+import com.mio.progetto.model.PaginaTransazioni;
 import com.mio.progetto.model.TransazioneEntity;
 import com.mio.progetto.service.TransazioneService;
 import jakarta.validation.Valid;
@@ -28,35 +29,46 @@ public class TransazioneController {
     }
 
     @GetMapping
-    public ResponseEntity<List<TransazioneEntity>> getAllTransazioni(
+    public ResponseEntity<PaginaTransazioni> getAllTransazioni(
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "100") @Min(1) @Max(100) int size,
+            @RequestParam(required = false) String categoria,
+            @RequestParam(required = false) String tipo,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataDa,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataA,
+            @RequestParam(required = false) String testo,
+            @RequestParam(defaultValue = "data") String sortBy, 
+            @RequestParam(defaultValue = "desc") String sortDir,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-        List<TransazioneEntity> transazioni = transazioneService.getAllTransazioniPaginated(userDetails.getId(), page, size);
-        return ResponseEntity.ok(transazioni);
+        PaginaTransazioni pagina = transazioneService.getTransazioniFiltrate(
+                userDetails.getId(), categoria, tipo, dataDa, dataA, testo, sortBy, sortDir, page, size);
+        return ResponseEntity.ok(pagina);
     }
 
-    @PostMapping
-    public ResponseEntity<?> insertTransazione(@Valid @RequestBody TransazioneEntity transazioneEntity, @AuthenticationPrincipal CustomUserDetails userDetails) {
+    private void validateTipoCategoria(TransazioneEntity transazioneEntity) {
         // Validazione della coerenza tra Tipo e Categoria
         boolean isEntrata = transazioneEntity.getTipo() == com.mio.progetto.model.TipoTransazione.ENTRATA;
         boolean isCategoriaEntrate = transazioneEntity.getCategoria() == com.mio.progetto.model.Categoria.ENTRATE;
-        
         if (isEntrata && !isCategoriaEntrate) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("Una transazione di tipo ENTRATA deve avere la categoria ENTRATE.");
+            throw new IllegalArgumentException("Una transazione di tipo ENTRATA deve avere la categoria ENTRATE.");
         }
         if (!isEntrata && isCategoriaEntrate) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("Una transazione di tipo USCITA non può avere la categoria ENTRATE.");
+            throw new IllegalArgumentException("Una transazione di tipo USCITA non può avere la categoria ENTRATE.");
         }
-
         // Validazione della coerenza tra categoria e sottocategoria
         boolean valida = com.mio.progetto.model.SottoCategoriaRegistry.getSottoCategorie(transazioneEntity.getCategoria()).stream()
                 .anyMatch(sc -> sc.getNome().equalsIgnoreCase(transazioneEntity.getSottocategoria()));
         if (!valida) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("La sottocategoria '" + transazioneEntity.getSottocategoria() + "' non è valida per la categoria " + transazioneEntity.getCategoria());
+            throw new IllegalArgumentException("La sottocategoria '" + transazioneEntity.getSottocategoria() + "' non è valida per la categoria " + transazioneEntity.getCategoria());
+        }
+    }
+
+    @PostMapping
+    public ResponseEntity<?> insertTransazione(@Valid @RequestBody TransazioneEntity transazioneEntity, @AuthenticationPrincipal CustomUserDetails userDetails) {
+        try {
+            validateTipoCategoria(transazioneEntity);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
 
         transazioneEntity.setUtenteId(userDetails.getId());
@@ -85,5 +97,23 @@ public class TransazioneController {
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         transazioneService.deleteTransazioniBeforeDate(data, userDetails.getId());
         return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateTransazione(@PathVariable int id, @Valid @RequestBody TransazioneEntity transazioneEntity, @AuthenticationPrincipal CustomUserDetails userDetails) {
+        try {
+            validateTipoCategoria(transazioneEntity);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+
+        transazioneEntity.setUtenteId(userDetails.getId());
+        int rowsAffected = transazioneService.updateTransazione(id, transazioneEntity, userDetails.getId());
+        if (rowsAffected == 0) {
+            return ResponseEntity.notFound().build();
+        }
+        else {
+            return ResponseEntity.ok(transazioneEntity);
+        }
     }
 }

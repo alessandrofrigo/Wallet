@@ -1,6 +1,7 @@
 package com.mio.progetto.service;
 
 import com.mio.progetto.model.Categoria;
+import com.mio.progetto.model.PaginaTransazioni;
 import com.mio.progetto.model.TipoTransazione;
 import com.mio.progetto.model.TransazioneEntity;
 import com.mio.progetto.repository.TransazioneRepository;
@@ -89,5 +90,48 @@ public class TransazioneServiceTest {
 
         assertEquals(5, deleted);
         verify(transazioneRepository, times(1)).deleteBeforeDate(date, utenteId);
+    }
+
+    @Test
+    void testUpdateTransazioneSuccess() {
+        int id = 1;
+        int utenteId = 1;
+        TransazioneEntity t = new TransazioneEntity(id, "Spesa aggiornata", Categoria.CIBO, "Supermercato", TipoTransazione.USCITA, new BigDecimal("20.00"), LocalDate.now(), utenteId);
+        when(transazioneRepository.update(id, t, utenteId)).thenReturn(1);
+
+        int rows = transazioneService.updateTransazione(id, t, utenteId);
+
+        assertEquals(1, rows);
+        verify(transazioneRepository, times(1)).update(id, t, utenteId);
+    }
+
+    @Test
+    void testUpdateTransazioneNotFound() {
+        int id = 99;
+        int utenteId = 1;
+        TransazioneEntity t = new TransazioneEntity(id, "Spesa", Categoria.CIBO, "Supermercato", TipoTransazione.USCITA, new BigDecimal("20.00"), LocalDate.now(), utenteId);
+        when(transazioneRepository.update(id, t, utenteId)).thenReturn(0);
+
+        int rows = transazioneService.updateTransazione(id, t, utenteId);
+
+        assertEquals(0, rows);
+    }
+
+    @Test
+    void testGetTransazioniFiltrate() {
+        int utenteId = 1;
+        TransazioneEntity t = new TransazioneEntity(1, "Pranzo", Categoria.CIBO, "Ristorante", TipoTransazione.USCITA, new BigDecimal("25.00"), LocalDate.now(), utenteId);
+        when(transazioneRepository.countFiltered(utenteId, "CIBO", null, null, null, null)).thenReturn(1L);
+        when(transazioneRepository.findAllFiltered(utenteId, "CIBO", null, null, null, null, "data", "desc", 0, 100))
+                .thenReturn(List.of(t));
+
+        PaginaTransazioni pagina = transazioneService.getTransazioniFiltrate(utenteId, "CIBO", null, null, null, null, "data", "desc", 0, 100);
+
+        assertEquals(1, pagina.contenuto().size());
+        assertEquals("Pranzo", pagina.contenuto().get(0).getDescrizione());
+        assertEquals(0, pagina.page());
+        assertEquals(100, pagina.size());
+        assertEquals(1L, pagina.totale());
+        assertEquals(1, pagina.totalePagine());
     }
 }

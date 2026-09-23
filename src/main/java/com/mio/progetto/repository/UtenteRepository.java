@@ -22,6 +22,7 @@ public class UtenteRepository {
         UtenteEntity u = new UtenteEntity();
         u.setId(rs.getInt("id"));
         u.setUsername(rs.getString("username"));
+        u.setEmail(rs.getString("email"));
         u.setPassword(rs.getString("password"));
         u.setRuolo(rs.getString("ruolo"));
         return u;
@@ -36,8 +37,60 @@ public class UtenteRepository {
         return Optional.of(utenti.get(0));
     }
 
+    public Optional<UtenteEntity> findByEmail( String email) {
+        String sql = "SELECT * FROM utenti WHERE email = ?";
+        List<UtenteEntity> utenti = jdbcTemplate.query(sql, rowMapper, email);
+        if (utenti.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(utenti.get(0));
+    }
+
+    public Optional<UtenteEntity> findByUsernameOrEmail(String username, String email) {
+        String sql = "SELECT * FROM utenti WHERE username = ? OR email = ?";
+        List<UtenteEntity> utenti = jdbcTemplate.query(sql, rowMapper, username, email);
+        if (utenti.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(utenti.get(0));
+    }
+    public Optional<UtenteEntity> findById(int id) {
+        String sql = "SELECT * FROM utenti WHERE id = ?";
+        List<UtenteEntity> utenti = jdbcTemplate.query(sql, rowMapper, id);
+        if (utenti.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(utenti.get(0));
+    }
+    public Optional<UtenteEntity> updateProfilo(int id, String username, String email) {
+        String sql = "UPDATE utenti SET username = ?, email = ? WHERE id = ?";
+        int rowsAffected = jdbcTemplate.update(sql, username, email, id);
+        if (rowsAffected > 0) {
+            return findById(id);
+        }
+        return Optional.empty();
+    }
+
+    public Optional<UtenteEntity> updatePassword(int id, String password) {
+        String sql = "UPDATE utenti SET password = ? WHERE id = ?";
+        int rowAffected = jdbcTemplate.update(sql,password,id);
+        if(rowAffected > 0){
+            return findById(id);
+        }
+        return Optional.empty();
+    }
+
+    public Optional<UtenteEntity> deleteById(int id){
+        String sql = "DELETE FROM utenti WHERE id = ?";
+        int rowsAffected = jdbcTemplate.update(sql, id);
+        if(rowsAffected > 0){
+            return Optional.empty();
+        }
+        return Optional.empty();
+    }
+
     public int insert(UtenteEntity u) {
-        String sql = "INSERT INTO utenti (username, password, ruolo) VALUES (?, ?, ?)";
-        return jdbcTemplate.update(sql, u.getUsername(), u.getPassword(), u.getRuolo());
+        String sql = "INSERT INTO utenti (username, email, password, ruolo) VALUES (?, ?, ?, ?)";
+        return jdbcTemplate.update(sql, u.getUsername(), u.getEmail(), u.getPassword(), u.getRuolo());
     }
 }

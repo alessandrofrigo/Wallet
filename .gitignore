@@ -2,7 +2,9 @@
 # Build output (Maven)
 # =====================
 target/
-
+.claude
+CLAUDE.md
+PIANO-*
 # =====================
 # IDE - IntelliJ IDEA
 # =====================

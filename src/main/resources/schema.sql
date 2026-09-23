@@ -4,7 +4,8 @@ USE gestione_spese;
 
 CREATE TABLE IF NOT EXISTS utenti (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(50) UNIQUE NOT NULL,
+    username VARCHAR(50) UNIQUE,
+    email VARCHAR(255) UNIQUE,
     password VARCHAR(255) NOT NULL,
     ruolo VARCHAR(20) NOT NULL
 );
@@ -34,3 +35,26 @@ SET @ddl := (SELECT IF(COUNT(*) = 0,
 PREPARE migrate_tipo FROM @ddl;
 EXECUTE migrate_tipo;
 DEALLOCATE PREPARE migrate_tipo;
+
+SET @ddl := (SELECT IF(COUNT(*) = 0,
+        'ALTER TABLE utenti ADD COLUMN email VARCHAR(255) UNIQUE',
+        'DO 0')
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'utenti'
+      AND COLUMN_NAME = 'email');
+PREPARE migrate_email FROM @ddl;
+EXECUTE migrate_email;
+DEALLOCATE PREPARE migrate_email;
+
+SET @ddl := (SELECT IF(COUNT(*) = 0,
+        'ALTER TABLE utenti MODIFY COLUMN username VARCHAR(50) NULL',
+        'DO 0')
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'utenti'
+      AND COLUMN_NAME = 'username'
+      and is_nullable = 'YES');
+PREPARE migrate_username FROM @ddl;
+EXECUTE migrate_username;
+DEALLOCATE PREPARE migrate_username;
