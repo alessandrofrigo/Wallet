@@ -43,17 +43,45 @@ async function apiFetch(url, options = {}) {
     return response;
 }
 
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str ?? '';
+    return div.innerHTML;
+}
+
+function initScrollReveal() {
+    const els = document.querySelectorAll('.reveal');
+    if (!('IntersectionObserver' in window)) {
+        els.forEach((el) => el.classList.add('is-in'));
+        return;
+    }
+    const io = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('is-in');
+                io.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.2 });
+    els.forEach((el) => io.observe(el));
+}
+
+
 // ========== Gestione Viste ==========
 
 const landingView = document.getElementById('landing-view');
 const authView = document.getElementById('auth-view');
 const dashboardView = document.getElementById('dashboard-view');
+const forgotPasswordView = document.getElementById('forgot-password-view');
+const resetPasswordView = document.getElementById('reset-password-view');
 let isLoginMode = true;
 
 function showView(viewName) {
     landingView.style.display = viewName === 'landing' ? 'flex' : 'none';
     authView.style.display = viewName === 'auth' ? 'block' : 'none';
     dashboardView.style.display = viewName === 'dashboard' ? 'flex' : 'none';
+    forgotPasswordView.style.display = viewName === 'forgot-password' ? 'block' : 'none';
+    resetPasswordView.style.display = viewName === 'reset-password' ? 'block' : 'none';
 }
 
 document.querySelectorAll('.landing-login-trigger').forEach(btn => {
@@ -136,22 +164,8 @@ authForm.addEventListener('submit', async (e) => {
                 authForm.reset();
                 setAuthMode(true);
             }
-        } else if (isLoginMode && response.status === 404) {
-            // Utente inesistente: non fare login, passa alla registrazione con il valore già compilato
-            showToast('Utente non registrato: completa la registrazione', 'error');
-            const identificativo = body.username;
-            setAuthMode(false);
-            if (identificativo.includes('@')) {
-                document.getElementById('reg-email').value = identificativo;
-                document.getElementById('reg-username').value = '';
-            } else {
-                document.getElementById('reg-username').value = identificativo;
-                document.getElementById('reg-email').value = '';
-            }
-            const pwd = document.getElementById('password');
-            pwd.value = '';
-            pwd.focus();
-        } else {
+        } 
+        else {
             const text = await response.text();
             showToast(text || 'Errore durante l\'operazione', 'error');
         }
@@ -186,6 +200,77 @@ async function checkAuth() {
         showView('landing');
     }
 }
+
+// ========== Password dimenticata / Reimposta password ==========
+
+const forgotPasswordForm = document.getElementById('forgot-password-form');
+const resetPasswordForm = document.getElementById('reset-password-form');
+let resetPasswordToken = null;
+
+document.getElementById('forgot-password-link').addEventListener('click', (e) => {
+    e.preventDefault();
+    showView('forgot-password');
+});
+
+document.getElementById('forgot-password-back-link').addEventListener('click', (e) => {
+    e.preventDefault();
+    setAuthMode(true);
+    showView('auth');
+});
+
+forgotPasswordForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('forgot-email').value.trim();
+
+    try {
+        const response = await apiFetch('/api/auth/forgot-password', {
+            method: 'POST',
+            body: JSON.stringify({ email })
+        });
+        const text = await response.text();
+        showToast(text, response.ok ? 'success' : 'error');
+        if (response.ok) {
+            forgotPasswordForm.reset();
+            setAuthMode(true);
+            showView('auth');
+        }
+    } catch (error) {
+        console.error(error);
+        showToast('Errore di connessione', 'error');
+    }
+});
+
+resetPasswordForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const nuovaPassword = document.getElementById('reset-new-password').value;
+    const confermaPassword = document.getElementById('reset-confirm-password').value;
+
+    if (nuovaPassword !== confermaPassword) {
+        showToast('Le due password non coincidono', 'error');
+        return;
+    }
+
+    try {
+        const response = await apiFetch('/api/auth/reset-password', {
+            method: 'POST',
+            body: JSON.stringify({ token: resetPasswordToken, nuovaPassword })
+        });
+        const text = await response.text();
+        if (response.ok) {
+            showToast(text, 'success');
+            resetPasswordForm.reset();
+            resetPasswordToken = null;
+            history.replaceState(null, '', window.location.pathname);
+            setAuthMode(true);
+            showView('auth');
+        } else {
+            showToast(text || 'Errore durante il reset della password', 'error');
+        }
+    } catch (error) {
+        console.error(error);
+        showToast('Errore di connessione', 'error');
+    }
+});
 
 // ========== Logica Dashboard ==========
 
@@ -455,7 +540,7 @@ function renderTable(transazioni) {
         tr.innerHTML = `
             <td>${t.data}</td>
             <td><span class="${isEntrata ? 'badge-entrata' : 'badge-uscita'}">${isEntrata ? '▲ Entrata' : '▼ Uscita'}</span></td>
-            <td>${t.descrizione || '-'}</td>
+            <td>${escapeHtml(t.descrizione) || '-'}</td> 
             <td>${t.categoria}</td>
             <td><span class="${isEntrata ? 'amount-income' : 'amount-expense'}">${isEntrata ? '+' : '-'} € ${t.importo.toFixed(2)}</span></td>
             <td>
@@ -558,7 +643,7 @@ function updateChart(transazioni) {
             datasets: [{
                 data: data,
                 backgroundColor: colors,
-                borderColor: 'rgba(15, 10, 26, 0.8)',
+                borderColor: 'rgba(21, 17, 14, 0.8)',
                 borderWidth: 2,
                 hoverOffset: 6
             }]
@@ -571,18 +656,18 @@ function updateChart(transazioni) {
                 legend: {
                     position: 'bottom',
                     labels: {
-                        color: '#64748b',
-                        font: { family: 'Sora', size: 11 },
+                        color: '#BFB2A3',
+                        font: { family: 'IBM Plex Sans', size: 11 },
                         padding: 12,
                         usePointStyle: true,
                         pointStyleWidth: 8
                     }
                 },
                 tooltip: {
-                    backgroundColor: '#1a1225',
-                    titleColor: '#e2e8f0',
-                    bodyColor: '#64748b',
-                    borderColor: '#2d1f3d',
+                    backgroundColor: '#211A15',
+                    titleColor: '#FFF8ED',
+                    bodyColor: '#BFB2A3',
+                    borderColor: '#352B23',
                     borderWidth: 1,
                     padding: 12,
                     cornerRadius: 8,
@@ -725,5 +810,14 @@ window.deleteTransazione = async function(id) {
 // ========== Inizializzazione ==========
 
 document.addEventListener('DOMContentLoaded', () => {
+    initScrollReveal();
+
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('resetToken');
+    if (token) {
+        resetPasswordToken = token;
+        showView('reset-password');
+        return;
+    }
     checkAuth();
 });

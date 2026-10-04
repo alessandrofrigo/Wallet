@@ -49,6 +49,9 @@ public class SecurityConfig {
         // Imposta il nome dell'attributo a null per consentire a Spring Security di risolvere
         // il token XSRF dall'header X-XSRF-TOKEN (default per client HTTP come Axios o Angular)
         requestHandler.setCsrfRequestAttributeName(null);
+        CookieCsrfTokenRepository csrfTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
+        csrfTokenRepository.setCookieCustomizer(cookie -> cookie.sameSite("Lax"));
+
 
         http
             // Abilita CORS con la nostra configurazione esistente
@@ -56,7 +59,7 @@ public class SecurityConfig {
             // Abilita CSRF con memorizzazione in cookie leggibile dal client JS
             .csrf(csrf -> csrf
                 .ignoringRequestMatchers("/api/auth/**")
-                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                .csrfTokenRepository(csrfTokenRepository)
                 .csrfTokenRequestHandler(requestHandler)
             )
             .addFilterAfter(new CsrfCookieFilter(), UsernamePasswordAuthenticationFilter.class)
@@ -71,7 +74,13 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             )
             // Se l'utente non è autenticato e chiama un endpoint protetto, ritorna 401 invece di fare redirect al form di login HTML
-            .exceptionHandling(ex -> ex.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)));
+            .exceptionHandling(ex -> ex.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
+            // Content-Security-Policy: limita le origini da cui script/stili/font possono essere caricati
+            .headers(headers -> headers.contentSecurityPolicy(csp -> csp.policyDirectives(
+                "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; " +
+                "style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; " +
+                "font-src https://fonts.gstatic.com; img-src 'self' data:;"
+            )));
 
         return http.build();
     }

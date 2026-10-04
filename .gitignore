@@ -74,3 +74,4 @@ spring.log
 # Usa application.properties.example come template
 # e ignora il file reale.
 src/main/resources/application.properties
+src/main/resources/application-prod.properties

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestione Spese App</title>
-    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -95,7 +95,7 @@
                 </div>
 
                 <div class="landing-features">
-                    <div class="glass-panel landing-feature">
+                    <div class="glass-panel landing-feature reveal">
                         <div class="landing-feature-icon">
                             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
                                 <line x1="8" y1="6" x2="21" y2="6"></line>
@@ -109,7 +109,7 @@
                         <h3>Transazioni organizzate</h3>
                         <p>Categorie e sottocategorie per ogni spesa, con filtri per data, categoria e testo, ordinamento e paginazione per ritrovare tutto in un attimo.</p>
                     </div>
-                    <div class="glass-panel landing-feature">
+                    <div class="glass-panel landing-feature reveal">
                         <div class="landing-feature-icon">
                             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
@@ -119,7 +119,7 @@
                         <h3>Dashboard chiara</h3>
                         <p>Bilancio, entrate e uscite aggiornati in tempo reale, con un grafico a ciambella che mostra subito dove si concentrano le spese.</p>
                     </div>
-                    <div class="glass-panel landing-feature">
+                    <div class="glass-panel landing-feature reveal">
                         <div class="landing-feature-icon">
                             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
@@ -131,7 +131,7 @@
                 </div>
             </section>
 
-            <section class="glass-panel landing-cta-band">
+            <section class="glass-panel landing-cta-band reveal">
                 <h2>Pronto a iniziare?</h2>
                 <p>Bastano username o email e una password. Nessuna carta di credito richiesta.</p>
                 <div class="landing-cta-actions">
@@ -171,11 +171,51 @@
             </div>
             <button type="submit" class="btn-primary" id="auth-submit-btn">Accedi</button>
         </form>
-        
+
+        <div class="auth-switch" id="auth-forgot-password-wrap">
+            <a href="#" id="forgot-password-link">Password dimenticata?</a>
+        </div>
+
         <div class="auth-switch">
             <span id="auth-switch-text">Non hai un account? </span>
             <a href="#" id="auth-switch-link">Registrati</a>
         </div>
+    </div>
+
+    <!-- VISTA: Password dimenticata -->
+    <div id="forgot-password-view" class="glass-panel auth-container" style="display: none;">
+        <h1>Password dimenticata?</h1>
+        <p class="subtitle">Inserisci l'email associata al tuo account: se esiste, riceverai un link per reimpostare la password.</p>
+
+        <form id="forgot-password-form">
+            <div class="input-group">
+                <label for="forgot-email">Email</label>
+                <input type="email" id="forgot-email" name="forgot-email" required>
+            </div>
+            <button type="submit" class="btn-primary">Invia link di recupero</button>
+        </form>
+
+        <div class="auth-switch">
+            <a href="#" id="forgot-password-back-link">Torna al login</a>
+        </div>
+    </div>
+
+    <!-- VISTA: Reimposta password (raggiunta solo tramite link ricevuto via email) -->
+    <div id="reset-password-view" class="glass-panel auth-container" style="display: none;">
+        <h1>Reimposta la password</h1>
+        <p class="subtitle">Scegli una nuova password per il tuo account.</p>
+
+        <form id="reset-password-form">
+            <div class="input-group">
+                <label for="reset-new-password">Nuova password</label>
+                <input type="password" id="reset-new-password" name="reset-new-password" required>
+            </div>
+            <div class="input-group">
+                <label for="reset-confirm-password">Conferma nuova password</label>
+                <input type="password" id="reset-confirm-password" name="reset-confirm-password" required>
+            </div>
+            <button type="submit" class="btn-primary">Reimposta password</button>
+        </form>
     </div>
 
     <!-- VISTA: Dashboard (Inizialmente nascosta) -->

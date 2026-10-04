@@ -2,13 +2,15 @@ package com.mio.progetto.controller;
 
 import com.mio.progetto.model.UtenteEntity;
 import com.mio.progetto.repository.UtenteRepository;
+import com.mio.progetto.security.LimitatoreTentativi;
 import com.mio.progetto.service.CustomUserDetails;
+import com.mio.progetto.service.MailService;
 
-import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -22,6 +24,14 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Base64;
+import java.util.HexFormat;
 import java.util.Optional;
 
 import org.apache.commons.lang3.StringUtils;
@@ -30,14 +40,24 @@ import org.apache.commons.lang3.StringUtils;
 @RequestMapping("/api/auth")
 public class AuthController {
 
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+    private static final Duration DURATA_VALIDITA_TOKEN_RESET = Duration.ofHours(1);
+
     private final AuthenticationManager authenticationManager;
     private final UtenteRepository utenteRepository;
     private final PasswordEncoder passwordEncoder;
+    private final MailService mailService;
+    private final LimitatoreTentativi loginLimiter = new LimitatoreTentativi(5, Duration.ofMinutes(5));
+    private final LimitatoreTentativi forgotPasswordLimiter = new LimitatoreTentativi(3, Duration.ofMinutes(15));
 
-    public AuthController(AuthenticationManager authenticationManager, UtenteRepository utenteRepository, PasswordEncoder passwordEncoder) {
+    @Value("${app.frontend-base-url}")
+    private String frontendBaseUrl;
+
+    public AuthController(AuthenticationManager authenticationManager, UtenteRepository utenteRepository, PasswordEncoder passwordEncoder, MailService mailService) {
         this.authenticationManager = authenticationManager;
         this.utenteRepository = utenteRepository;
         this.passwordEncoder = passwordEncoder;
+        this.mailService = mailService;
     }
 
     public static class LoginRequest {
@@ -53,17 +73,26 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<String> login(@Valid @RequestBody LoginRequest loginRequest, HttpServletRequest request) {
-        
-        // Se lo username non esiste, blocca il login e invita alla registrazione (404),
-        // distinguendolo dal caso "password errata" (401).
+
+        String ip = request.getRemoteAddr();
+        if (loginLimiter.isBloccato(ip)) {
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                    .body("Troppi tentativi falliti. Riprova tra qualche minuto.");
+        }
+
+        // Risposta unificata (401 "Credenziali non valide.") sia per utente inesistente che
+        // per password errata, per non rivelare quali username/email sono registrati.
         if (!utenteRepository.findByUsernameOrEmail(loginRequest.username, loginRequest.username).isPresent()){
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("Utente non registrato. Effettua prima la registrazione.");
+            loginLimiter.registraFallimento(ip);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Credenziali non valide.");
         }
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(loginRequest.username, loginRequest.password)
             );
+
+            loginLimiter.registraSuccesso(ip);
 
             // Salva l'autenticazione nel contesto di sicurezza per la sessione corrente
             SecurityContext securityContext = SecurityContextHolder.getContext();
@@ -71,11 +100,13 @@ public class AuthController {
 
             // Crea la sessione HTTPServlet per far sì che il client riceva il cookie JSESSIONID
             HttpSession session = request.getSession(true);
+            request.changeSessionId();
             session.setAttribute("SPRING_SECURITY_CONTEXT", securityContext);
 
             return ResponseEntity.ok("Login effettuato con successo");
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Credenziali non valide");
+            loginLimiter.registraFallimento(ip);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Credenziali non valide.");
         }
     }
 
@@ -96,7 +127,7 @@ public class AuthController {
         public String username;
 
         @NotBlank(message = "Password non può essere vuota")
-        @Size(min = 4, max = 100, message = "La password deve contenere tra i 4 e i 100 caratteri")
+        @Size(min = 8, max = 100, message = "La password deve contenere tra i 8 e i 100 caratteri")
         public String password;
 
         // @NotBlank(message = "Email non può essere vuota")
@@ -135,6 +166,78 @@ public class AuthController {
 
         utenteRepository.insert(nuovoUtente);
         return ResponseEntity.status(HttpStatus.CREATED).body("Utente registrato con successo");
+    }
+
+    public static class ForgotPasswordRequest {
+        @NotBlank(message = "Email non può essere vuota")
+        @Pattern(regexp = "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+", message = "L'email non è valida")
+        public String email;
+    }
+
+    private static final String MESSAGGIO_FORGOT_PASSWORD_GENERICO =
+            "Se l'indirizzo è registrato, riceverai a breve un'email con le istruzioni per reimpostare la password.";
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<String> forgotPassword(@Valid @RequestBody ForgotPasswordRequest forgotPasswordRequest, HttpServletRequest request) {
+        String ip = request.getRemoteAddr();
+        if (forgotPasswordLimiter.isBloccato(ip)) {
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                    .body("Troppe richieste. Riprova tra qualche minuto.");
+        }
+        forgotPasswordLimiter.registraFallimento(ip);
+
+        String email = StringUtils.lowerCase(StringUtils.trimToNull(forgotPasswordRequest.email));
+        utenteRepository.findByEmail(email).ifPresent(utente -> {
+            byte[] tokenBytes = new byte[32];
+            SECURE_RANDOM.nextBytes(tokenBytes);
+            String token = Base64.getUrlEncoder().withoutPadding().encodeToString(tokenBytes);
+            String tokenHash = sha256Hex(token);
+
+            utenteRepository.impostaResetToken(utente.getId(), tokenHash, Instant.now().plus(DURATA_VALIDITA_TOKEN_RESET));
+
+            String link = frontendBaseUrl + "/index.html?resetToken=" + token;
+            try {
+                mailService.inviaEmailResetPassword(email, link);
+            } catch (Exception e) {
+                // Un errore di invio non deve mai trasparire nella risposta: altrimenti si
+                // reintroduce la possibilità di distinguere email registrate da quelle inesistenti.
+            }
+        });
+
+        // Risposta sempre identica, email trovata o meno, per evitare user enumeration.
+        return ResponseEntity.ok(MESSAGGIO_FORGOT_PASSWORD_GENERICO);
+    }
+
+    public static class ResetPasswordRequest {
+        @NotBlank(message = "Token mancante")
+        public String token;
+
+        @NotBlank(message = "Password non può essere vuota")
+        @Size(min = 8, max = 100, message = "La password deve contenere tra i 8 e i 100 caratteri")
+        public String nuovaPassword;
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<String> resetPassword(@Valid @RequestBody ResetPasswordRequest resetPasswordRequest) {
+        String tokenHash = sha256Hex(resetPasswordRequest.token);
+
+        return utenteRepository.findByResetTokenValido(tokenHash)
+                .map(utente -> {
+                    utenteRepository.updatePassword(utente.getId(), passwordEncoder.encode(resetPasswordRequest.nuovaPassword));
+                    utenteRepository.pulisciResetToken(utente.getId());
+                    return ResponseEntity.ok("Password aggiornata. Ora puoi accedere.");
+                })
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Link non valido o scaduto."));
+    }
+
+    private static String sha256Hex(String valore) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(valore.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(hash);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 non disponibile", e);
+        }
     }
 
     @GetMapping("/me")

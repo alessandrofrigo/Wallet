@@ -6,6 +6,8 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
 import java.sql.ResultSet;
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -92,5 +94,24 @@ public class UtenteRepository {
     public int insert(UtenteEntity u) {
         String sql = "INSERT INTO utenti (username, email, password, ruolo) VALUES (?, ?, ?, ?)";
         return jdbcTemplate.update(sql, u.getUsername(), u.getEmail(), u.getPassword(), u.getRuolo());
+    }
+
+    public void impostaResetToken(int id, String tokenHash, Instant scadenza) {
+        String sql = "UPDATE utenti SET reset_token_hash = ?, reset_token_expiry = ? WHERE id = ?";
+        jdbcTemplate.update(sql, tokenHash, Timestamp.from(scadenza), id);
+    }
+
+    public Optional<UtenteEntity> findByResetTokenValido(String tokenHash) {
+        String sql = "SELECT * FROM utenti WHERE reset_token_hash = ? AND reset_token_expiry > NOW()";
+        List<UtenteEntity> utenti = jdbcTemplate.query(sql, rowMapper, tokenHash);
+        if (utenti.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(utenti.get(0));
+    }
+
+    public void pulisciResetToken(int id) {
+        String sql = "UPDATE utenti SET reset_token_hash = NULL, reset_token_expiry = NULL WHERE id = ?";
+        jdbcTemplate.update(sql, id);
     }
 }

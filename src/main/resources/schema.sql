@@ -7,7 +7,9 @@ CREATE TABLE IF NOT EXISTS utenti (
     username VARCHAR(50) UNIQUE,
     email VARCHAR(255) UNIQUE,
     password VARCHAR(255) NOT NULL,
-    ruolo VARCHAR(20) NOT NULL
+    ruolo VARCHAR(20) NOT NULL,
+    reset_token_hash VARCHAR(64) NULL,
+    reset_token_expiry TIMESTAMP NULL
 );
 
 CREATE TABLE IF NOT EXISTS transazioni (
@@ -58,3 +60,25 @@ SET @ddl := (SELECT IF(COUNT(*) = 0,
 PREPARE migrate_username FROM @ddl;
 EXECUTE migrate_username;
 DEALLOCATE PREPARE migrate_username;
+
+SET @ddl := (SELECT IF(COUNT(*) = 0,
+        'ALTER TABLE utenti ADD COLUMN reset_token_hash VARCHAR(64) NULL',
+        'DO 0')
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'utenti'
+      AND COLUMN_NAME = 'reset_token_hash');
+PREPARE migrate_reset_token_hash FROM @ddl;
+EXECUTE migrate_reset_token_hash;
+DEALLOCATE PREPARE migrate_reset_token_hash;
+
+SET @ddl := (SELECT IF(COUNT(*) = 0,
+        'ALTER TABLE utenti ADD COLUMN reset_token_expiry TIMESTAMP NULL',
+        'DO 0')
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'utenti'
+      AND COLUMN_NAME = 'reset_token_expiry');
+PREPARE migrate_reset_token_expiry FROM @ddl;
+EXECUTE migrate_reset_token_expiry;
+DEALLOCATE PREPARE migrate_reset_token_expiry;
