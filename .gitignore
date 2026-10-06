@@ -67,11 +67,3 @@ replay_pid*
 logs/
 spring.log
 
-# =====================
-# Configurazione sensibile
-# =====================
-# Il file application.properties contiene credenziali DB.
-# Usa application.properties.example come template
-# e ignora il file reale.
-src/main/resources/application.properties
-src/main/resources/application-prod.properties
