@@ -35,11 +35,14 @@ import java.util.HexFormat;
 import java.util.Optional;
 
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
 
+    private static final Logger log = LoggerFactory.getLogger(AuthController.class);
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private static final Duration DURATA_VALIDITA_TOKEN_RESET = Duration.ofHours(1);
 
@@ -201,6 +204,8 @@ public class AuthController {
             } catch (Exception e) {
                 // Un errore di invio non deve mai trasparire nella risposta: altrimenti si
                 // reintroduce la possibilità di distinguere email registrate da quelle inesistenti.
+                // Lo logghiamo solo lato server per poterlo diagnosticare.
+                log.error("Invio email di reset password fallito", e);
             }
         });
 

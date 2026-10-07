@@ -66,4 +66,6 @@ replay_pid*
 *.log
 logs/
 spring.log
+application-local.properties
+.env
 
